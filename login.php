@@ -11,10 +11,13 @@ if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
 // Include config file
 require_once "config.php";
  
-// Define variables and initialize with empty values
+// Define variables
 $username = $password = "";
 $username_err = $password_err = $captcha_err = "";
-$captcha_code = rand(1000, 5000);
+
+if(!isset($_SESSION["captcha_code"])){
+    $_SESSION["captcha_code"] = rand(1000, 5000);
+}
 
 // Processing form data when form is submitted
 if($_SERVER["REQUEST_METHOD"] == "POST"){
@@ -65,7 +68,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                         if(password_verify($password, $hashed_password)){
 
                             // Password is correct, check captcha
-                            if($captcha == $captcha_code)
+                            if($captcha == $_SESSION["captcha_code"])
                             {
                                 //Captcha is correct, start session
                                 session_start();
@@ -80,7 +83,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                             }
                             else{
                                 // Display an error message if captcha is not valid
-                                $captcha_err = "The captcha you entered was not valid. $captcha_code, $captcha";
+                                $captcha_err = "The captcha you entered was not valid.";
+                                $_SESSION["captcha_code"] = rand(1000, 5000);
                             }
                         } else{
                             // Display an error message if password is not valid
@@ -132,7 +136,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 <span class="help-block"><?php echo $password_err; ?></span>
             </div> 
             <div class="form-group <?php echo (!empty($captcha_err)) ? 'has-error' : ''; ?>">
-                <label>Captcha - <?php echo $captcha_code; ?></label>
+                <label>Captcha - <?php echo $_SESSION["captcha_code"]; ?></label>
                 <input type="text" name="captcha-input" class="form-control">
                 <span class="help-block"><?php echo $captcha_err; ?></span>
             </div> 

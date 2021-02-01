@@ -13,8 +13,12 @@ require_once "config.php";
  
 // Define variables and initialize with empty values
 $new_password = $confirm_password = "";
-$new_password_err = $confirm_password_err = "";
+$new_password_err = $confirm_password_err = $captcha_err = "";
  
+if(!isset($_SESSION["captcha_code"])){
+    $_SESSION["captcha_code"] = rand(1000, 5000);
+}
+
 // Processing form data when form is submitted
 if($_SERVER["REQUEST_METHOD"] == "POST"){
  
@@ -36,9 +40,20 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             $confirm_password_err = "Password did not match.";
         }
     }
-        
+
+    // Validate captcha
+    if(empty(trim($_POST["captcha-input"]))){
+        $captcha_err = "Please enter the captcha.";
+    } else{
+        $captcha = trim($_POST["captcha-input"]);
+        if($captcha != $_SESSION["captcha_code"]){
+            $_SESSION["captcha_code"] = rand(1000, 5000);
+            $confirm_err = "Captcha did not match.";
+        }
+    }
+
     // Check input errors before updating the database
-    if(empty($new_password_err) && empty($confirm_password_err)){
+    if(empty($new_password_err) && empty($confirm_password_err) && empty($captcha_err)){
         // Prepare an update statement
         $sql = "UPDATE users SET password = ? WHERE id = ?";
         
@@ -84,7 +99,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 <body>
     <div class="wrapper">
         <h2>Reset Password</h2>
-        <p>Please fill out this form to reset your password.</p>
+        <p>Please fill out this form to reset your password for user: <?php echo $_SESSION['username']; ?>.</p>
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post"> 
             <div class="form-group <?php echo (!empty($new_password_err)) ? 'has-error' : ''; ?>">
                 <label>New Password</label>
@@ -96,6 +111,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 <input type="password" name="confirm_password" class="form-control">
                 <span class="help-block"><?php echo $confirm_password_err; ?></span>
             </div>
+            <div class="form-group <?php echo (!empty($captcha_err)) ? 'has-error' : ''; ?>">
+                <label>Captcha - <?php echo $_SESSION["captcha_code"]; ?></label>
+                <input type="text" name="captcha-input" class="form-control">
+                <span class="help-block"><?php echo $captcha_err; ?></span>
+            </div> 
             <div class="form-group">
                 <input type="submit" class="btn btn-primary" value="Submit">
                 <a class="btn btn-link" href="welcome.php">Cancel</a>
